@@ -53,3 +53,32 @@ elif(app_mode=="Prediction"):
         for i in content:
             label.append(i[:-1])
         st.success("Model is Predicting it's a {}".format(label[result_index]))
+
+## visualization
+import matplotlib.pyplot as plt
+import plotly.express as px
+import pandas as pd
+
+# After predicting on the image
+prediction = model.predict(img_array)[0]  # get 1D array if using model.predict(img_array)
+
+# Get class labels from your training generator or model metadata
+class_labels = list(class_names.values())  # or use train.class_indices
+
+# Create a dataframe for plotting
+df_plot = pd.DataFrame({
+    'Class': class_labels,
+    'Confidence': prediction * 100
+})
+
+# Sort by confidence
+df_plot = df_plot.sort_values(by='Confidence', ascending=False).reset_index(drop=True)
+
+# Streamlit section
+st.subheader("🔍 Prediction Confidence by Class")
+
+# Plot with Plotly
+fig = px.bar(df_plot.head(10), x='Confidence', y='Class', orientation='h', color='Confidence',
+             color_continuous_scale='Viridis', title='Top 10 Prediction Probabilities')
+
+st.plotly_chart(fig, use_container_width=True)
