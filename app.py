@@ -16,6 +16,22 @@ def model_prediction(test_image):
 st.sidebar.title("Dashboard")
 app_mode = st.sidebar.selectbox("Select Page",["Home","About Project","Prediction"])
 
+from collections import Counter
+import os
+#///addd this new///
+# This works if your data is in folders per class
+train_dir = "/your/train/path"
+class_counts = {folder: len(os.listdir(os.path.join(train_dir, folder))) for folder in os.listdir(train_dir)}
+
+df_dist = pd.DataFrame(list(class_counts.items()), columns=['Class', 'Count'])
+
+st.subheader("📊 Class Distribution in Training Data")
+
+# Plotly Pie Chart
+fig = px.pie(df_dist, names='Class', values='Count', title='Class Distribution')
+st.plotly_chart(fig, use_container_width=True)
+###///end////
+
 #Main Page
 if(app_mode=="Home"):
     st.header("FRUITS & VEGETABLES RECOGNITION SYSTEM")
