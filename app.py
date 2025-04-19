@@ -19,16 +19,16 @@ app_mode = st.sidebar.selectbox("Select Page",["Home","About Project","Predictio
 from collections import Counter
 import os
 #///addd this new///
-# This works if your data is in folders per class
-train_dir = '/root/.cache/kagglehub/datasets/kritikseth/fruit-and-vegetable-image-recognition/versions/8/train'
-class_counts = {folder: len(os.listdir(os.path.join(train_dir, folder))) for folder in os.listdir(train_dir)}
+import pandas as pd
+import plotly.express as px
 
-df_dist = pd.DataFrame(list(class_counts.items()), columns=['Class', 'Count'])
+df = pd.read_csv("class_distribution.csv")
 
-st.subheader("📊 Class Distribution in Training Data")
-
-# Plotly Pie Chart
-fig = px.pie(df_dist, names='Class', values='Count', title='Class Distribution')
+st.subheader("🍎 Class Distribution")
+fig = px.bar(df.sort_values(by="Image Count", ascending=False),
+             x="Class", y="Image Count",
+             title="Number of Images per Class",
+             color="Image Count", color_continuous_scale="Bluered")
 st.plotly_chart(fig, use_container_width=True)
 ###///end////
 
