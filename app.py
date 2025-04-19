@@ -1,58 +1,76 @@
-
 import streamlit as st
 import tensorflow as tf
+from tensorflow.keras.utils import custom_object_scope
+from tensorflow.keras.layers import Layer
+from tensorflow.keras.preprocessing.image import load_img, img_to_array
 import numpy as np
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
+# Print TensorFlow version for debugging
+st.write(f"TensorFlow Version: {tf.__version__}")
 
-#Tensorflow Model Prediction
-def model_prediction(test_image):
-    model = tf.keras.models.load_model("mobilenet.h5")
-    image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
-    input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr]) #convert single image to batch
-    predictions = model.predict(input_arr)
-    return np.argmax(predictions) #return index of max element
+# Define a custom TrueDivide layer
+class TrueDivideLayer(Layer):
+    def __init__(self, **kwargs):
+        super(TrueDivideLayer, self).__init__(**kwargs)
 
-#Sidebar
-st.sidebar.title("Dashboard")
-app_mode = st.sidebar.selectbox("Select Page",["Home","About Project","Prediction"])
+    def call(self, inputs):
+        # Handle single input (e.g., input / constant) or two inputs (x / y)
+        if isinstance(inputs, (list, tuple)):
+            x, y = inputs
+            return tf.math.truediv(x, y)
+        else:
+            # Assume division by a constant (e.g., 127.5 for MobileNetV2 preprocessing)
+            return tf.math.truediv(inputs, tf.constant(127.5, dtype=inputs.dtype))
 
-#Main Page
-if(app_mode=="Home"):
-    st.header("FRUITS & VEGETABLES RECOGNITION SYSTEM")
-    image_path = "home_img.jpg"
-    st.image(image_path)
+    def get_config(self):
+        config = super(TrueDivideLayer, self).get_config()
+        return config
 
-#About Project
-elif(app_mode=="About Project"):
-    st.header("About Project")
-    st.subheader("About Dataset")
-    st.text("This dataset contains images of the following food items:")
-    st.code("fruits- banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
-    st.code("vegetables- cucumber, carrot, capsicum, onion, potato, lemon, tomato, raddish, beetroot, cabbage, lettuce, spinach, soy bean, cauliflower, bell pepper, chilli pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalepeño, ginger, garlic, peas, eggplant.")
-    st.subheader("Content")
-    st.text("This dataset contains three folders:")
-    st.text("1. train (100 images each)")
-    st.text("2. test (10 images each)")
-    st.text("3. validation (10 images each)")
+# Function to load and predict
+@st.cache_resource
+def load_model():
+    try:
+        with custom_object_scope({'TrueDivide': TrueDivideLayer}):
+            model = tf.keras.models.load_model("mobilenet.h5", compile=False)
+        return model
+    except Exception as e:
+        st.error(f"Error loading model: {str(e)}")
+        return None
 
-#Prediction Page
-elif(app_mode=="Prediction"):
-    st.header("Model Prediction")
-    test_image = st.file_uploader("Choose an Image:")
-    if(st.button("Show Image")):
-        st.image(test_image,width=4,use_column_width=True)
-    #Predict button
-    if(st.button("Predict")):
-        st.snow()
-        st.write("Our Prediction")
-        result_index = model_prediction(test_image)
-        #Reading Labels
-        with open("labels.txt") as f:
-            content = f.readlines()
-        label = []
-        for i in content:
-            label.append(i[:-1])
-        st.success("Model is Predicting it's a {}".format(label[result_index]))
+def model_prediction(image):
+    model = load_model()
+    if model is None:
+        return None
+    img = load_img(image, target_size=(128, 128))
+    img_array = img_to_array(img)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = preprocess_input(img_array)
+    predictions = model.predict(img_array)
+    return np.argmax(predictions[0])
 
+# Class names (based on your dataset with 36 classes)
+class_names = [
+    'apple', 'banana', 'beetroot', 'bell pepper', 'cabbage', 'capsicum', 'carrot',
+    'cauliflower', 'chilli pepper', 'corn', 'cucumber', 'eggplant', 'garlic', 'ginger',
+    'grapes', 'jalapeno', 'kiwi', 'lemon', 'lettuce', 'mango', 'onion', 'orange',
+    'paprika', 'pear', 'peas', 'pineapple', 'pomegranate', 'potato', 'raddish',
+    'soy beans', 'spinach', 'sweetcorn', 'sweetpotato', 'tomato', 'turnip', 'watermelon'
+]
 
+# Streamlit app interface
+st.title("Fruit and Vegetable Classifier")
+st.write("Upload an image of a fruit or vegetable to classify it.")
+
+uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+if uploaded_file is not None:
+    # Display the uploaded image
+    st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
+    
+    # Predict
+    result_index = model_prediction(uploaded_file)
+    if result_index is not None:
+        result = class_names[result_index]
+        st.write(f"Prediction: **{result}**")
+    else:
+        st.error("Failed to make a prediction due to model loading error.")
