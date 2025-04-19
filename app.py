@@ -22,7 +22,7 @@ st.write("Upload an image of a fruit or vegetable, and the model will classify i
 
 @st.cache_resource
 def load_model_cached():
-    get_custom_objects().update({'preprocess_input': preprocess_input})
+    
     return load_model("mobilenet.h5")
 
 model = load_model_cached()
