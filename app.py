@@ -5,8 +5,8 @@ import numpy as np
 
 #Tensorflow Model Prediction
 def model_prediction(test_image):
-    model = tf.keras.models.load_model("FV.h5")
-    image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
+    model = tf.keras.models.load_model("trained_model.h5")
+    image = tf.keras.preprocessing.image.load_img(test_image,target_size=(64,64))
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
     input_arr = np.array([input_arr]) #convert single image to batch
     predictions = model.predict(input_arr)
@@ -53,8 +53,3 @@ elif(app_mode=="Prediction"):
         for i in content:
             label.append(i[:-1])
         st.success("Model is Predicting it's a {}".format(label[result_index]))
-            if cal:
-                st.warning('**' + cal + '(100 grams)**')
-
-
-run()
