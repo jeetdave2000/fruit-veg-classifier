@@ -1,73 +1,58 @@
 import streamlit as st
-from PIL import Image
-import requests
-from bs4 import BeautifulSoup
+import tensorflow as tf
 import numpy as np
-from keras.preprocessing.image import load_img, img_to_array
-from keras.models import load_model
-
-model = load_model('FV.h5')
-
-labels = {0: 'apple', 1: 'banana', 2: 'beetroot', 3: 'bell pepper', 4: 'cabbage', 5: 'capsicum', 6: 'carrot',
-          7: 'cauliflower', 8: 'chilli pepper', 9: 'corn', 10: 'cucumber', 11: 'eggplant', 12: 'garlic', 13: 'ginger',
-          14: 'grapes', 15: 'jalepeno', 16: 'kiwi', 17: 'lemon', 18: 'lettuce',
-          19: 'mango', 20: 'onion', 21: 'orange', 22: 'paprika', 23: 'pear', 24: 'peas', 25: 'pineapple',
-          26: 'pomegranate', 27: 'potato', 28: 'raddish', 29: 'soy beans', 30: 'spinach', 31: 'sweetcorn',
-          32: 'sweetpotato', 33: 'tomato', 34: 'turnip', 35: 'watermelon'}
-
-fruits = ['Apple', 'Banana', 'Bello Pepper', 'Chilli Pepper', 'Grapes', 'Jalepeno', 'Kiwi', 'Lemon', 'Mango', 'Orange',
-          'Paprika', 'Pear', 'Pineapple', 'Pomegranate', 'Watermelon']
-vegetables = ['Beetroot', 'Cabbage', 'Capsicum', 'Carrot', 'Cauliflower', 'Corn', 'Cucumber', 'Eggplant', 'Ginger',
-              'Lettuce', 'Onion', 'Peas', 'Potato', 'Raddish', 'Soy Beans', 'Spinach', 'Sweetcorn', 'Sweetpotato',
-              'Tomato', 'Turnip']
 
 
-def fetch_calories(prediction):
-    try:
-        url = 'https://www.google.com/search?&q=calories in ' + prediction
-        req = requests.get(url).text
-        scrap = BeautifulSoup(req, 'html.parser')
-        calories = scrap.find("div", class_="BNeawe iBp4i AP7Wnd").text
-        return calories
-    except Exception as e:
-        st.error("Can't able to fetch the Calories")
-        print(e)
+#Tensorflow Model Prediction
+def model_prediction(test_image):
+    model = tf.keras.models.load_model("FV.h5")
+    image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
+    input_arr = tf.keras.preprocessing.image.img_to_array(image)
+    input_arr = np.array([input_arr]) #convert single image to batch
+    predictions = model.predict(input_arr)
+    return np.argmax(predictions) #return index of max element
 
+#Sidebar
+st.sidebar.title("Dashboard")
+app_mode = st.sidebar.selectbox("Select Page",["Home","About Project","Prediction"])
 
-def prepare_image(img_path):
-    img = load_img(img_path, target_size=(224, 224, 3))
-    img = img_to_array(img)
-    img = img / 255
-    img = np.expand_dims(img, [0])
-    answer = model.predict(img)
-    y_class = answer.argmax(axis=-1)
-    print(y_class)
-    y = " ".join(str(x) for x in y_class)
-    y = int(y)
-    res = labels[y]
-    print(res)
-    return res.capitalize()
+#Main Page
+if(app_mode=="Home"):
+    st.header("FRUITS & VEGETABLES RECOGNITION SYSTEM")
+    image_path = "home_img.jpg"
+    st.image(image_path)
 
+#About Project
+elif(app_mode=="About Project"):
+    st.header("About Project")
+    st.subheader("About Dataset")
+    st.text("This dataset contains images of the following food items:")
+    st.code("fruits- banana, apple, pear, grapes, orange, kiwi, watermelon, pomegranate, pineapple, mango.")
+    st.code("vegetables- cucumber, carrot, capsicum, onion, potato, lemon, tomato, raddish, beetroot, cabbage, lettuce, spinach, soy bean, cauliflower, bell pepper, chilli pepper, turnip, corn, sweetcorn, sweet potato, paprika, jalepeño, ginger, garlic, peas, eggplant.")
+    st.subheader("Content")
+    st.text("This dataset contains three folders:")
+    st.text("1. train (100 images each)")
+    st.text("2. test (10 images each)")
+    st.text("3. validation (10 images each)")
 
-def run():
-    st.title("Fruits🍍-Vegetable🍅 Classification")
-    img_file = st.file_uploader("Choose an Image", type=["jpg", "png"])
-    if img_file is not None:
-        img = Image.open(img_file).resize((250, 250))
-        st.image(img, use_column_width=False)
-        save_image_path = './upload_images/' + img_file.name
-        with open(save_image_path, "wb") as f:
-            f.write(img_file.getbuffer())
-
-        # if st.button("Predict"):
-        if img_file is not None:
-            result = prepare_image(save_image_path)
-            if result in vegetables:
-                st.info('**Category : Vegetables**')
-            else:
-                st.info('**Category : Fruit**')
-            st.success("**Predicted : " + result + '**')
-            cal = fetch_calories(result)
+#Prediction Page
+elif(app_mode=="Prediction"):
+    st.header("Model Prediction")
+    test_image = st.file_uploader("Choose an Image:")
+    if(st.button("Show Image")):
+        st.image(test_image,width=4,use_column_width=True)
+    #Predict button
+    if(st.button("Predict")):
+        st.snow()
+        st.write("Our Prediction")
+        result_index = model_prediction(test_image)
+        #Reading Labels
+        with open("labels.txt") as f:
+            content = f.readlines()
+        label = []
+        for i in content:
+            label.append(i[:-1])
+        st.success("Model is Predicting it's a {}".format(label[result_index]))
             if cal:
                 st.warning('**' + cal + '(100 grams)**')
 
