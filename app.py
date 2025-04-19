@@ -20,7 +20,7 @@ from collections import Counter
 import os
 #///addd this new///
 # This works if your data is in folders per class
-train_dir = "/your/train/path"
+train_dir = '/root/.cache/kagglehub/datasets/kritikseth/fruit-and-vegetable-image-recognition/versions/8/train'
 class_counts = {folder: len(os.listdir(os.path.join(train_dir, folder))) for folder in os.listdir(train_dir)}
 
 df_dist = pd.DataFrame(list(class_counts.items()), columns=['Class', 'Count'])
