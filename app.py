@@ -5,6 +5,7 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing import image
 import numpy as np
 from PIL import Image
+from keras.utils import get_custom_objects 
 
 # Manually list class names (sorted alphabetically)
 class_names = ['apple', 'banana', 'beetroot', 'bell pepper', 'cabbage', 
