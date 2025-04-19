@@ -41,37 +41,5 @@ if uploaded_file is not None:
     confidence = np.max(predictions) * 100
 
     st.success(f"Prediction: **{pred_class}** ({confidence:.2f}%)")
-import matplotlib.pyplot as plt
 
-# After prediction
-predictions = model.predict(img_array)[0]
-top_indices = predictions.argsort()[-5:][::-1]  # Top 5 predictions
-top_classes = [class_names[i] for i in top_indices]
-top_probs = [predictions[i] * 100 for i in top_indices]
-
-st.success(f"Prediction: **{top_classes[0]}** ({top_probs[0]:.2f}%)")
-
-# Plot the bar chart
-fig, ax = plt.subplots()
-bars = ax.barh(top_classes[::-1], top_probs[::-1], color='limegreen')
-ax.set_xlabel("Confidence (%)")
-ax.set_title("Top 5 Class Probabilities")
-ax.invert_yaxis()  # Highest on top
-
-# Add value labels on bars
-for i, bar in enumerate(bars):
-    width = bar.get_width()
-    ax.text(width + 1, bar.get_y() + bar.get_height()/2, f'{width:.2f}%', va='center')
-
-st.pyplot(fig)
-import plotly.express as px
-
-df = {
-    'Class': top_classes,
-    'Confidence': top_probs
-}
-fig = px.bar(df, x='Confidence', y='Class', orientation='h',
-             title="Top 5 Class Probabilities", color='Confidence',
-             color_continuous_scale='Blues')
-st.plotly_chart(fig)
 
