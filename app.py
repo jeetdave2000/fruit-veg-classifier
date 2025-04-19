@@ -4,14 +4,23 @@ import numpy as np
 import gdown
 import os
 
-# Download the model from Google Drive if not already present
+# Download model from Google Drive if not already present
 model_path = "trained_model.h5"
 if not os.path.exists(model_path):
+    st.info("Model file not found. Downloading from Google Drive...")
     url = "https://drive.google.com/file/d/1AW50CAeO0_w5L0zUAnQNNabT7L5mJ2Pb/view?usp=sharing"  # Replace with your actual file ID
-    gdown.download(url, model_path, quiet=False)
+    try:
+        gdown.download(url, model_path, quiet=False)
+        st.success("Model downloaded successfully!")
+    except Exception as e:
+        st.error(f"Failed to download model: {e}")
 
 # Tensorflow Model Prediction
 def model_prediction(test_image):
+    if not os.path.exists("trained_model.h5"):
+        st.error("Model file not found. Please check if it was downloaded properly.")
+        return -1  # Invalid prediction index
+
     model = tf.keras.models.load_model("trained_model.h5")
     image = tf.keras.preprocessing.image.load_img(test_image, target_size=(64, 64))
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
@@ -27,7 +36,10 @@ app_mode = st.sidebar.selectbox("Select Page", ["Home", "About Project", "Predic
 if app_mode == "Home":
     st.header("FRUITS & VEGETABLES RECOGNITION SYSTEM")
     image_path = "home_img.jpg"
-    st.image(image_path)
+    if os.path.exists(image_path):
+        st.image(image_path)
+    else:
+        st.warning("Home image not found. Please upload 'home_img.jpg' in your repo.")
 
 # About Project
 elif app_mode == "About Project":
@@ -45,19 +57,20 @@ elif app_mode == "About Project":
 # Prediction Page
 elif app_mode == "Prediction":
     st.header("Model Prediction")
-    test_image = st.file_uploader("Choose an Image:")
-    if st.button("Show Image"):
-        st.image(test_image, width=4, use_column_width=True)
+    test_image = st.file_uploader("Choose an Image:", type=["jpg", "jpeg", "png"])
 
-    # Predict button
-    if st.button("Predict"):
-        st.snow()
-        st.write("Our Prediction")
-        result_index = model_prediction(test_image)
-        # Reading Labels
-        with open("labels.txt") as f:
-            content = f.readlines()
-        label = []
-        for i in content:
-            label.append(i.strip())
-        st.success("Model is Predicting it's a {}".format(label[result_index]))
+    if test_image is not None:
+        st.image(test_image, use_column_width=True)
+
+        if st.button("Predict"):
+            st.snow()
+            st.write("Model is predicting...")
+            result_index = model_prediction(test_image)
+
+            if result_index != -1:
+                try:
+                    with open("labels.txt") as f:
+                        label = [line.strip() for line in f.readlines()]
+                    st.success(f"Model is predicting it's a **{label[result_index]}**")
+                except Exception as e:
+                    st.error("Error reading labels.txt: {}".format(e))
