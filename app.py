@@ -41,7 +41,7 @@ if uploaded_file is not None:
     confidence = np.max(predictions) * 100
 
     st.success(f"Prediction: **{pred_class}** ({confidence:.2f}%)")
-  import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 # After prediction
 predictions = model.predict(img_array)[0]
