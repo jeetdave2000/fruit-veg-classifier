@@ -32,7 +32,7 @@ class TrueDivideLayer(Layer):
 def load_model():
     try:
         with custom_object_scope({'TrueDivide': TrueDivideLayer}):
-            model = tf.keras.models.load_model("mobilenet.h5", compile=False)
+            model = tf.keras.models.load_model("FV.h5", compile=False)
         return model
     except Exception as e:
         st.error(f"Error loading model: {str(e)}")
