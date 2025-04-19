@@ -1,5 +1,5 @@
 requests==2.29.0
-beautifulsoup4
+beautifulsoup4==4.12.3
 streamlit
 numpy
 Pillow
