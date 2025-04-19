@@ -41,44 +41,45 @@ elif(app_mode=="Prediction"):
     test_image = st.file_uploader("Choose an Image:")
     if(st.button("Show Image")):
         st.image(test_image,width=4,use_column_width=True)
-    #Predict button
-    if(st.button("Predict")):
+   # Predict button
+    if st.button("Predict"):
         st.snow()
         st.write("Our Prediction")
-        result_index = model_prediction(test_image)
-        #Reading Labels
+
+        # Load model
+        model = tf.keras.models.load_model("mobilenet_final.keras")
+
+        # Prepare image
+        image = tf.keras.preprocessing.image.load_img(test_image, target_size=(128, 128))
+        img_array = tf.keras.preprocessing.image.img_to_array(image)
+        img_array = np.expand_dims(img_array, axis=0)
+
+        # Predict
+        prediction = model.predict(img_array)[0]
+
+        # Read labels
         with open("labels.txt") as f:
-            content = f.readlines()
-        label = []
-        for i in content:
-            label.append(i[:-1])
-        st.success("Model is Predicting it's a {}".format(label[result_index]))
+            label = [line.strip() for line in f.readlines()]
 
-## visualization
-import matplotlib.pyplot as plt
-import plotly.express as px
-import pandas as pd
+        result_index = np.argmax(prediction)
+        predicted_label = label[result_index]
+        st.success(f"Model is predicting it's a **{predicted_label}**")
 
-# After predicting on the image
-prediction = model.predict(img_array)[0]  # get 1D array if using model.predict(img_array)
+        # 🎯 Visualization of confidence scores
+        import pandas as pd
+        import plotly.express as px
 
-# Get class labels from your training generator or model metadata
-class_labels = list(class_names.values())  # or use train.class_indices
+        df_plot = pd.DataFrame({
+            'Class': label,
+            'Confidence': prediction * 100
+        })
 
-# Create a dataframe for plotting
-df_plot = pd.DataFrame({
-    'Class': class_labels,
-    'Confidence': prediction * 100
-})
+        df_plot = df_plot.sort_values(by='Confidence', ascending=False).reset_index(drop=True)
 
-# Sort by confidence
-df_plot = df_plot.sort_values(by='Confidence', ascending=False).reset_index(drop=True)
+        st.subheader("🔍 Prediction Confidence by Class")
 
-# Streamlit section
-st.subheader("🔍 Prediction Confidence by Class")
+        fig = px.bar(df_plot.head(10), x='Confidence', y='Class', orientation='h',
+                     color='Confidence', color_continuous_scale='Viridis',
+                     title='Top 10 Prediction Probabilities')
 
-# Plot with Plotly
-fig = px.bar(df_plot.head(10), x='Confidence', y='Class', orientation='h', color='Confidence',
-             color_continuous_scale='Viridis', title='Top 10 Prediction Probabilities')
-
-st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True)
